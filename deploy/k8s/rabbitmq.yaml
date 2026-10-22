@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: relayflow-rabbitmq
+  namespace: launchthat
+  labels:
+    app: relayflow-rabbitmq
+spec:
+  selector:
+    app: relayflow-rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relayflow-rabbitmq
+  namespace: launchthat
+  labels:
+    app: relayflow-rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: relayflow-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: relayflow-rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: amqp
+              containerPort: 5672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: relay
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: relayflow-env
+                  key: RABBITMQ_PASSWORD
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi

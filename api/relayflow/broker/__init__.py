@@ -1,0 +1,1 @@
+"""RabbitMQ exchanges and queues."""
